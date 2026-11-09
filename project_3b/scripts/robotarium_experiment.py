@@ -2,7 +2,15 @@ import rps.robotarium as robotarium
 from rps.utilities.barrier_certificates import *
 import numpy as np
 
-LOCAL_SIM = True # Set to False before submitting to real Robotarium
+LOCAL_SIM = False # Set to False before submitting to real Robotarium
+
+# The real Robotarium runs a newer rps than the simulator bundled with this project:
+# it renamed the unicycle barrier certificate and replaced call_at_scripts_end() with debug().
+# Pick whichever exists so the same script runs in both places.
+try:
+    make_uni_barrier = create_uni_barrier_certificate_with_boundary       # Robotarium server
+except NameError:
+    make_uni_barrier = create_unicycle_barrier_certificate_with_boundary  # bundled simulator
 
 class RandomConfig:
     def __init__(self):
@@ -206,7 +214,7 @@ def main():
         initial_conditions=init_conds,
     )
 
-    uni_barrier = create_unicycle_barrier_certificate_with_boundary()
+    uni_barrier = make_uni_barrier()
 
     controller = RandomWalkController(
         n_robots=N_ROBOTS,
@@ -300,7 +308,10 @@ def main():
     print(f"Saved: gt_poses.npy, encoder_data.npy, lidar_scans.npy, "
           f"keyframe_steps.npy, range_edges.npy, initial_poses.npy")
 
-    r.call_at_scripts_end()
+    if hasattr(r, "debug"):
+        r.debug()                 # Robotarium server
+    else:
+        r.call_at_scripts_end()   # bundled simulator
 
 if __name__ == "__main__":
     main()
